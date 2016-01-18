@@ -206,60 +206,28 @@ const store = createStore(todoApp);
 
 /* Render ------------------------------------- */
 let nextTodoId = 0;
-class TodoApp extends React.Component {
-  render() {
-    // Assignment from props so that we can access directly.
-    const {
-      todos,
-      visibilityFilter
-    } = this.props
 
-    const visibleTodos = getVisibleTodos(
-      todos,
-      visibilityFilter
-    );
-    return (
-      <div>
-        { /*The ref Callback Attribute */ }
-        <input type="text" ref={node => {this.input = node;}} />
-        <button onClick={ () => {
-          if (this.input.value) {
-            store.dispatch({ type: 'ADD_TODO', text: this.input.value, id: nextTodoId++ });
-            this.input.value = "";
-          }
-        }}>
-          Add Todo
-        </button>
-        <TodoList todos={visibleTodos} onTodoClick={id =>
-          store.dispatch({type: 'TOGGLE_TODO', id: id})
-        }/>
-        <p>
-          Show:
-          {' '}
-          <FilterLink filter="SHOW_ALL" children="All" curretFilter={visibilityFilter} />
-          {' '}
-          <FilterLink filter="SHOW_COMPLETED" children="Completed" curretFilter={visibilityFilter} />
-          {' '}
-          <FilterLink filter="SHOW_ACTIVE" children="Not completed" curretFilter={visibilityFilter} />
-        </p>
-      </div>
-    );
-  }
-}
+// Functional component
+const TodoApp = ({todos, visibilityFilter}) => (
+  <div>
+    <AddTodo onAddTodo={(input) => {
+      if (input.value) {
+        store.dispatch({ type: 'ADD_TODO', text: input.value, id: nextTodoId++ });
+        input.value = "";
+      }
+    }}/>
 
-const FilterLink = ({filter, children, curretFilter}) => {
-  if (filter === curretFilter) {
-    return <span>{children}</span>;
-  }
-  return (
-    <a href="#" onClick={e => {
-        e.preventDefault();
-        store.dispatch({ type: 'SET_VISBILITY_FILTER', filter: filter })
-      }}>
-      {children}
-    </a>
-  )
-};
+    <TodoList
+      todos={getVisibleTodos(todos, visibilityFilter)}
+      onTodoClick={id => {
+        store.dispatch({type: 'TOGGLE_TODO', id: id});
+    }}/>
+
+    <Filters currentFilter={visibilityFilter} clickFilter={filter => {
+      store.dispatch({ type: 'SET_VISBILITY_FILTER', filter: filter })
+    }}/>
+  </div>
+);
 
 // Presentational component
 const Todo = ({onClick, completed, text}) => (
@@ -280,6 +248,52 @@ const TodoList = ({todos, onTodoClick}) => (
     )}
   </ul>
 );
+
+// Presentational component
+// You can't specify onAddTodo directly.
+// Instead pass anonymous function that excute the onAddTodo function.
+const AddTodo = ({onAddTodo}) => {
+  let input; // local variable
+  return (
+    <div>
+      <input type="text" ref={node => {input = node;}} />
+      <button onClick={() => onAddTodo(input)}>
+        Add Todo
+      </button>
+    </div>
+  );
+};
+
+// Presentational component
+const Filters = ({currentFilter, clickFilter}) => (
+  <p>
+    Show:
+    {' '}
+    <FilterLink filter="SHOW_ALL" children="All"
+            curretFilter={currentFilter} onClick={clickFilter} />
+    {' '}
+    <FilterLink filter="SHOW_COMPLETED" children="Completed"
+            curretFilter={currentFilter} onClick={clickFilter} />
+    {' '}
+    <FilterLink filter="SHOW_ACTIVE" children="Not completed"
+            curretFilter={currentFilter} onClick={clickFilter} />
+  </p>
+);
+
+// Presentational component
+const FilterLink = ({filter, children, curretFilter, onClick}) => {
+  if (filter === curretFilter) {
+    return <span>{children}</span>;
+  }
+  return (
+    <a href="#" onClick={e => {
+      e.preventDefault();
+      onClick(filter)
+    }}>
+      {children}
+    </a>
+  )
+};
 
 
 const render = () => {
