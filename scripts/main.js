@@ -151,6 +151,16 @@ const visibilityFilter = (state = 'SHOW_ALL', action) => {
   }
 };
 
+const getVisibleTodos = (todos, filter) => {
+  switch(filter) {
+    case 'SHOW_ALL':
+      return todos;
+    case 'SHOW_COMPLETED':
+      return todos.filter(todo => todo.completed);
+    case 'SHOW_ACTIVE':
+      return todos.filter(todo => !todo.completed);
+  }
+}
 
 
 // This is hand writing version of conbining reducers.
@@ -198,6 +208,16 @@ const store = createStore(todoApp);
 let nextTodoId = 0;
 class TodoApp extends React.Component {
   render() {
+    // Assignment from props so that we can access directly.
+    const {
+      todos,
+      visibilityFilter
+    } = this.props
+
+    const visibleTodos = getVisibleTodos(
+      todos,
+      visibilityFilter
+    );
     return (
       <div>
         { /*The ref Callback Attribute */ }
@@ -211,23 +231,52 @@ class TodoApp extends React.Component {
           Add Todo
         </button>
         <ul>
-          {this.props.todos.map(todo =>
-            <li key={todo.id}>
+          {visibleTodos.map(todo =>
+            <li key={todo.id}
+              onClick={() => {
+                store.dispatch({ type: 'TOGGLE_TODO', id: todo.id })
+              }}
+              style={{
+                textDecoration: todo.completed ? 'line-through' : 'none'
+              }}>
               {todo.text}
             </li>
           )}
         </ul>
+        <p>
+          Show:
+          {' '}
+          <FilterLink filter="SHOW_ALL" children="All" curretFilter={visibilityFilter} />
+          {' '}
+          <FilterLink filter="SHOW_COMPLETED" children="Completed" curretFilter={visibilityFilter} />
+          {' '}
+          <FilterLink filter="SHOW_ACTIVE" children="Not completed" curretFilter={visibilityFilter} />
+        </p>
       </div>
     );
   }
 }
 
+const FilterLink = ({filter, children, curretFilter}) => {
+  if (filter === curretFilter) {
+    return <span>{children}</span>;
+  }
+  return (
+    <a href="#" onClick={e => {
+        e.preventDefault();
+        store.dispatch({ type: 'SET_VISBILITY_FILTER', filter: filter })
+      }}>
+      {children}
+    </a>
+  )
+};
+
 const render = () => {
   ReactDOM.render(
-    <TodoApp todos={store.getState().todos} />,
+    <TodoApp {...store.getState()} />,
     document.getElementById('root')
   );
-}
+};
 
 store.subscribe(render);
 render();
