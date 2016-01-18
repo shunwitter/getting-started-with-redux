@@ -202,7 +202,7 @@ const todoApp = combineReducers({
   visibilityFilter
 });
 
-const store = createStore(todoApp);
+
 
 /* Render ------------------------------------- */
 
@@ -240,6 +240,7 @@ const TodoList = ({todos, onTodoClick}) => (
 class VisibleTodoList extends React.Component {
 
   componentDidMount() {
+    const { store } = this.context;
     this.unsubscribe = store.subscribe(() => {
       this.forceUpdate();
     })
@@ -251,6 +252,7 @@ class VisibleTodoList extends React.Component {
 
   render() {
     const props = this.props;
+    const { store } = this.context;
     const state = store.getState();
 
     return (
@@ -265,12 +267,17 @@ class VisibleTodoList extends React.Component {
     );
   }
 }
+VisibleTodoList.contextTypes = {
+  store: React.PropTypes.object
+};
 
 // Presentational component
 // You can't specify onAddTodo directly.
 // Instead pass anonymous function that excute the onAddTodo function.
 let nextTodoId = 0;
-const AddTodo = () => {
+// We can get store from the context as an argument. => (props, context)
+// Here, it's using ES6 distructuring syntax to get store object.
+const AddTodo = (props, { store }) => {
   let input; // local variable
   return (
     <div>
@@ -286,6 +293,9 @@ const AddTodo = () => {
       </button>
     </div>
   );
+};
+AddTodo.contextTypes = {
+  store: React.PropTypes.object
 };
 
 // Presentational component
@@ -311,6 +321,7 @@ const Filters = () => (
 // Container Components
 class FilterLink extends React.Component {
   componentDidMount() {
+    const { store } = this.context;
     this.unsubscribe = store.subscribe(() => {
       this.forceUpdate();
     })
@@ -322,6 +333,7 @@ class FilterLink extends React.Component {
 
   render() {
     const props = this.props;
+    const { store } = this.context;
     const state = store.getState();
 
     return (
@@ -332,6 +344,9 @@ class FilterLink extends React.Component {
     );
   }
 }
+FilterLink.contextTypes = {
+  store: React.PropTypes.object
+};
 
 // Presentational component
 const Link = ({active, children, onClick}) => {
@@ -348,9 +363,25 @@ const Link = ({active, children, onClick}) => {
   )
 };
 
+class Provider extends React.Component {
+  getChildContext() {
+    return {
+      store: this.props.store
+    };
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+Provider.childContextTypes = {
+  store: React.PropTypes.object
+}
 
 ReactDOM.render(
-  <TodoApp />,
+  <Provider store={createStore(todoApp)} >
+    <TodoApp />
+  </Provider>,
   document.getElementById('root')
 );
 
