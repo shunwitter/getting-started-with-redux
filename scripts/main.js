@@ -194,6 +194,46 @@ const todoApp = combineReducers({
 
 const store = createStore(todoApp);
 
+/* Render ------------------------------------- */
+let nextTodoId = 0;
+class TodoApp extends React.Component {
+  render() {
+    return (
+      <div>
+        { /*The ref Callback Attribute */ }
+        <input type="text" ref={node => {this.input = node;}} />
+        <button onClick={ () => {
+          if (this.input.value) {
+            store.dispatch({ type: 'ADD_TODO', text: this.input.value, id: nextTodoId++ });
+            this.input.value = "";
+          }
+        }}>
+          Add Todo
+        </button>
+        <ul>
+          {this.props.todos.map(todo =>
+            <li key={todo.id}>
+              {todo.text}
+            </li>
+          )}
+        </ul>
+      </div>
+    );
+  }
+}
+
+const render = () => {
+  ReactDOM.render(
+    <TodoApp todos={store.getState().todos} />,
+    document.getElementById('root')
+  );
+}
+
+store.subscribe(render);
+render();
+
+
+
 /* Testing ------------------------------------- */
 
 /*
@@ -305,6 +345,7 @@ console.log("test passed!");
 
 /* Logging ------------------------------------- */
 
+/*
 console.log("Current state:");
 console.log(store.getState());
 console.log("--------------");
@@ -332,7 +373,7 @@ store.dispatch({ type: "SET_VISBILITY_FILTER", filter: 'SHOW_COMPLETED' });
 console.log("Current state:");
 console.log(store.getState());
 console.log("--------------");
-
+*/
 
 
 
