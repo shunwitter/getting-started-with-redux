@@ -2,9 +2,10 @@ Redux Lesson
 ===========================
 
 This is an application built from Dan Abramov's lesson.
-https://egghead.io/series/getting-started-with-redux
+<br>
+[https://egghead.io/series/getting-started-with-redux](https://egghead.io/series/getting-started-with-redux).
 
-The development set up is from [rectforbeginners.com](reactforbeginners.com).
+Development set up is from [rectforbeginners.com](reactforbeginners.com).
 
 ###Install packages
 
