@@ -7,7 +7,28 @@ import { createStore, combineReducers } from 'redux';
 import { Provider } from 'react-redux';
 import { connect } from 'react-redux';
 
-/* Render ------------------------------------- */
+
+
+
+/* Action Creator ------------------------------------- */
+
+let nextTodoId = 0;
+const addTodo = (text) => {
+  return { type: 'ADD_TODO', text, id: nextTodoId++ };
+};
+
+const setVisibilityFilter = (filter) => {
+  return { type: 'SET_VISBILITY_FILTER', filter };
+};
+
+const toggleTodo = (id) => {
+  return {type: 'TOGGLE_TODO', id};
+};
+
+
+
+
+/* Reducer ------------------------------------- */
 
 const todo = (state, action) => {
   switch(action.type) {
@@ -113,7 +134,7 @@ const mapStateToTodoListProps = (state) => {
 const mapDispatchToTodoListProps = (dispatch) => {
   return {
     onTodoClick: (id)  => {
-      dispatch({type: 'TOGGLE_TODO', id})
+      dispatch(toggleTodo(id));
     }
   };
 };
@@ -129,7 +150,6 @@ TodoList = connect(
 AddTodo
 */
 
-let nextTodoId = 0;
 let AddTodo = ({ dispatch }) => {
   let input; // local variable
   return (
@@ -137,7 +157,7 @@ let AddTodo = ({ dispatch }) => {
       <input type="text" ref={node => {input = node;}} />
       <button onClick={() => {
         if (input.value) {
-          dispatch({ type: 'ADD_TODO', text: input.value, id: nextTodoId++ });
+          dispatch(addTodo(input.value));
         }
         input.value = "";
       }}>
@@ -190,7 +210,7 @@ const mapStateToFilterLinkProps = (state, ownProps) => {
 const mapDispatchToFliterLinkProps = (dispatch, ownProps) => {
   return {
     onClick: () => {
-      dispatch({ type: 'SET_VISBILITY_FILTER', filter: ownProps.filter })
+      dispatch(setVisibilityFilter(ownProps.filter));
     }
   };
 };
