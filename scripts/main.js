@@ -4,114 +4,10 @@ import ReactDOM from 'react-dom';
 import DeepFreeze from 'deep-freeze';
 
 import { createStore, combineReducers } from 'redux';
+import { Provider } from 'react-redux';
+import { connect } from 'react-redux';
 
-
-// Store
-/*
-const store = createStore(counter);
-*/
-
-/*
-// Implementation of createStore
-const createStore = (reducer) =>  {
-  let state;
-  let listeners = [];
-
-  const getState = () => state;
-
-  const dispatch = (action) => {
-    state = reducer(state, action);
-    listeners.forEach((listener) => {
-      listener();
-    });
-  };
-
-  const subscribe = (listener) => {
-    listeners.push(listener);
-    return () => {
-      listeners = listeners.filter((l) => {
-        l !== listener
-      });
-    }
-  };
-
-  dispatch({});
-
-  return { getState, dispatch, subscribe };
-}
-*/
-
-
-// Reducer
-// Accept current state and action, return next state.
-/*
-const counter = (state = 0, action) => {
-  switch (action.type) {
-    case 'INCREMENT':
-      return state + 1;
-    case 'DECREMENT':
-      return state - 1;
-    default:
-      return state;
-  }
-}
-*/
-
-// This is stateless component
-// with ES6 destructuring assignment.
-// You should you it whenever you can if you don't need
-// this.state or React lifecycle methods.
-/*
-const Counter = ({ value, onIncrement, onDecrement }) => (
-  <div>
-    <h1>{value}</h1>
-    <button onClick={onIncrement}>+</button>
-    <button onClick={onDecrement}>-</button>
-  </div>
-)
-*/
-
-// View
-/*
-const render = () => {
-  ReactDOM.render(
-    <Counter value={store.getState()}
-      onIncrement={() =>
-        store.dispatch({
-          type: 'INCREMENT'
-        })
-      }
-      onDecrement={() =>
-        store.dispatch({
-          type: 'DECREMENT'
-        })
-      }
-    />,
-    document.getElementById('root')
-  );
-};
-
-//store.subscribe(render);
-//render();
-*/
-
-
-const addCounter = (list) => {
-  // Spread list array in a array.
-  return [...list, 0];
-};
-
-const removeCounter = (list, index) => {
-  return [...list.slice(0, index), ...list.slice(index + 1)]
-};
-
-const incrementCounter = (list, index) => {
-  return [
-    ...list.slice(0, index),
-    list[index] + 1,
-    ...list.slice(index + 1)
-  ];
-}
+/* Render ------------------------------------- */
 
 const todo = (state, action) => {
   switch(action.type) {
@@ -151,6 +47,18 @@ const visibilityFilter = (state = 'SHOW_ALL', action) => {
   }
 };
 
+
+// Mearge reducers automatically
+const todoApp = combineReducers({
+  todos,
+  visibilityFilter
+});
+
+
+
+
+/* Helper ------------------------------------- */
+
 const getVisibleTodos = (todos, filter) => {
   switch(filter) {
     case 'SHOW_ALL':
@@ -163,59 +71,14 @@ const getVisibleTodos = (todos, filter) => {
 }
 
 
-// This is hand writing version of conbining reducers.
-/*
-const todoApp = (state = {}, action) => {
-  return {
-    todos: todos(state.todos, action),
-    visibilityFilter: (visibilityFilter(state.visibilityFilter, action))
-  }
-};
-*/
+
+/* Component ------------------------------------- */
+
+
 
 /*
-// Implementation of combineReducer from scratch
-const combineReducers = (reducers) => {
-  // Return value must be a function(another reducer) with multiple reducers.
-  return (state = {}, action) => {
-    return Object.keys(reducers).reduce(
-      (prev, current) => {
-        // prev is an object because initial value is given.
-        // current is a key from reducers.
-        prev[current] = reducers[current](state[current], action);
-        return prev[current];
-      },
-      {} //initial value
-    );
-  };
-};
+Todo
 */
-
-// Mearge reducers automatically
-// *key has to be a property of state.
-//   e.g. state.todos ====> { todos: todos }
-// *value has to be a reducer.
-// In addition, since key name is always same as value name,
-// you can ommit value name thanks to ES6 object literal short hand.
-const todoApp = combineReducers({
-  todos,
-  visibilityFilter
-});
-
-
-
-/* Render ------------------------------------- */
-
-
-// Functional component
-const TodoApp = () => (
-  <div>
-    <AddTodo />
-    <VisibleTodoList />
-    <Filters />
-  </div>
-);
-
 // Presentational component
 const Todo = ({onClick, completed, text}) => (
   <li
@@ -227,76 +90,129 @@ const Todo = ({onClick, completed, text}) => (
   </li>
 );
 
+
+
+/*
+TodoList
+*/
+
 // Presentational component
-const TodoList = ({todos, onTodoClick}) => (
+let TodoList = ({todos, onTodoClick}) => (
   <ul>
     {todos.map(todo =>
       <Todo key={todo.id} {...todo} onClick={() => onTodoClick(todo.id)} />
     )}
   </ul>
 );
-
-// Container Components
-class VisibleTodoList extends React.Component {
-
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => {
-      this.forceUpdate();
-    })
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
-  render() {
-    const props = this.props;
-    const { store } = this.context;
-    const state = store.getState();
-
-    return (
-      <TodoList todos={getVisibleTodos(
-                    state.todos,
-                    state.visibilityFilter
-                  )
-                }
-                onTodoClick={id => {
-                  store.dispatch({type: 'TOGGLE_TODO', id})
-                }} />
-    );
-  }
-}
-VisibleTodoList.contextTypes = {
-  store: React.PropTypes.object
+// Mappers
+const mapStateToTodoListProps = (state) => {
+  return {
+    todos: getVisibleTodos(state.todos, state.visibilityFilter)
+  };
 };
+const mapDispatchToTodoListProps = (dispatch) => {
+  return {
+    onTodoClick: (id)  => {
+      dispatch({type: 'TOGGLE_TODO', id})
+    }
+  };
+};
+// Create Container Component using connect function.
+TodoList = connect(
+  mapStateToTodoListProps,
+  mapDispatchToTodoListProps
+)(TodoList);
 
-// Presentational component
-// You can't specify onAddTodo directly.
-// Instead pass anonymous function that excute the onAddTodo function.
+
+
+/*
+AddTodo
+*/
+
 let nextTodoId = 0;
-// We can get store from the context as an argument. => (props, context)
-// Here, it's using ES6 distructuring syntax to get store object.
-const AddTodo = (props, { store }) => {
+let AddTodo = ({ dispatch }) => {
   let input; // local variable
   return (
     <div>
       <input type="text" ref={node => {input = node;}} />
       <button onClick={() => {
-        console.log(input.value);
         if (input.value) {
-          store.dispatch({ type: 'ADD_TODO', text: input.value, id: nextTodoId++ });
-          input.value = "";
+          dispatch({ type: 'ADD_TODO', text: input.value, id: nextTodoId++ });
         }
+        input.value = "";
       }}>
         Add Todo
       </button>
     </div>
   );
 };
-AddTodo.contextTypes = {
-  store: React.PropTypes.object
+AddTodo = connect()(AddTodo);
+
+// Same as...
+/*
+let nextTodoId = 0;
+const mapDispatchToAddTodoProps = (dispatch) => {
+  return {
+    onAddTodoClick: (input) => {
+      if (input.value) {
+        dispatch({ type: 'ADD_TODO', text: input.value, id: nextTodoId++ });
+        input.value = "";
+      }
+    }
+  };
 };
+let AddTodo = ({ onAddTodoClick }) => {
+  let input; // local variable
+  return (
+    <div>
+      <input type="text" ref={node => {input = node;}} />
+      <button onClick={() => { onAddTodoClick(input) }}>
+        Add Todo
+      </button>
+    </div>
+  );
+};
+AddTodo = connect(null, mapDispatchToAddTodoProps)(AddTodo);
+*/
+
+
+
+/*
+Filters
+*/
+
+// props will passed as second argument.
+const mapStateToFilterLinkProps = (state, ownProps) => {
+  return {
+    active: state.visibilityFilter === ownProps.filter,
+  }
+};
+const mapDispatchToFliterLinkProps = (dispatch, ownProps) => {
+  return {
+    onClick: () => {
+      dispatch({ type: 'SET_VISBILITY_FILTER', filter: ownProps.filter })
+    }
+  };
+};
+// Presentational component
+const Link = ({active, children, onClick}) => {
+  if (active) {
+    return <span>{children}</span>;
+  }
+  return (
+    <a href="#" onClick={e => {
+      e.preventDefault();
+      onClick();
+    }}>
+      {children}
+    </a>
+  )
+};
+const FilterLink = connect(
+  mapStateToFilterLinkProps,
+  mapDispatchToFliterLinkProps
+)(Link);
+
 
 // Presentational component
 const Filters = () => (
@@ -318,217 +234,27 @@ const Filters = () => (
 );
 
 
-// Container Components
-class FilterLink extends React.Component {
-  componentDidMount() {
-    const { store } = this.context;
-    this.unsubscribe = store.subscribe(() => {
-      this.forceUpdate();
-    })
-  }
 
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
+/* Render ------------------------------------- */
 
-  render() {
-    const props = this.props;
-    const { store } = this.context;
-    const state = store.getState();
-
-    return (
-      <Link active={props.filter === state.visibilityFilter}
-            onClick={() => store.dispatch({ type: 'SET_VISBILITY_FILTER', filter: props.filter })}
-            children={props.children}
-      />
-    );
-  }
-}
-FilterLink.contextTypes = {
-  store: React.PropTypes.object
-};
+/*
+App
+*/
 
 // Presentational component
-const Link = ({active, children, onClick}) => {
-  if (active) {
-    return <span>{children}</span>;
-  }
-  return (
-    <a href="#" onClick={e => {
-      e.preventDefault();
-      onClick();
-    }}>
-      {children}
-    </a>
-  )
-};
+const TodoApp = () => (
+  <div>
+    <AddTodo />
+    <TodoList />
+    <Filters />
+  </div>
+);
 
-class Provider extends React.Component {
-  getChildContext() {
-    return {
-      store: this.props.store
-    };
-  }
-
-  render() {
-    return this.props.children;
-  }
-}
-Provider.childContextTypes = {
-  store: React.PropTypes.object
-}
-
+// Pass store globally by context
 ReactDOM.render(
   <Provider store={createStore(todoApp)} >
     <TodoApp />
   </Provider>,
   document.getElementById('root')
 );
-
-
-/* Testing ------------------------------------- */
-
-/*
-const testAddCounter = () => {
-  const listBefore = [];
-  const listAfter = [0];
-
-  DeepFreeze(listBefore);
-
-  expect(
-    addCounter(listBefore)
-  ).toEqual(listAfter);
-};
-
-const testRemoveCounter = () => {
-  const listBefore = [10, 20, 30];
-  const listAfter = [10, 30];
-
-  DeepFreeze(listBefore);
-
-  expect(
-    removeCounter(listBefore, 1)
-  ).toEqual(listAfter);
-}
-
-const testIncrementCounter = () => {
-  const listBefore = [10, 20, 30];
-  const listAfter = [10, 21, 30];
-
-  DeepFreeze(listBefore);
-
-  expect(
-    incrementCounter(listBefore, 1)
-  ).toEqual(listAfter);
-}
-
-testAddCounter();
-testRemoveCounter();
-testIncrementCounter();
-
-*/
-
-const testAddTodo = () => {
-  const stateBefore = [];
-  const action = {
-    id: 0,
-    text: 'Learn Redux',
-    type: 'ADD_TODO'
-  };
-  const stateAfter = [
-    {
-      id: 0,
-      text: 'Learn Redux',
-      completed: false
-    }
-  ];
-
-  DeepFreeze(stateBefore);
-  DeepFreeze(action);
-
-  expect(
-    todos(stateBefore, action)
-  ).toEqual(stateAfter);
-}
-
-const testToggleTodo = () => {
-  const action = {
-    type: 'TOGGLE_TODO',
-    id: 1
-  }
-  const todoBefore = [
-    {
-      id: 0,
-      text: 'Learn Redux',
-      completed: false
-    },
-    {
-      id: 1,
-      text: 'React is awesome',
-      completed: false
-    }
-  ];
-  const todoAfter = [
-    {
-      id: 0,
-      text: 'Learn Redux',
-      completed: false
-    },
-    {
-      id: 1,
-      text: 'React is awesome',
-      completed: true
-    }
-  ];
-
-  DeepFreeze(todoBefore);
-  DeepFreeze(action);
-
-  expect(
-    todos(todoBefore, action)
-  ).toEqual(todoAfter);
-};
-
-
-testAddTodo();
-testToggleTodo();
-console.log("test passed!");
-
-
-/* Logging ------------------------------------- */
-
-/*
-console.log("Current state:");
-console.log(store.getState());
-console.log("--------------");
-
-console.log("Dispatch ADD_TODO:");
-store.dispatch({ type: "ADD_TODO", id: 0, text: "Learn Redux" });
-console.log("Current state:");
-console.log(store.getState());
-console.log("--------------");
-
-console.log("Dispatch ADD_TODO:");
-store.dispatch({ type: "ADD_TODO", id: 1, text: "Learn React!" });
-console.log("Current state:");
-console.log(store.getState());
-console.log("--------------");
-
-console.log("Dispatch TOGGLE_TODO:");
-store.dispatch({ type: "TOGGLE_TODO", id: 1 });
-console.log("Current state:");
-console.log(store.getState());
-console.log("--------------");
-
-console.log("Dispatch SET_VISBILITY_FILTER:");
-store.dispatch({ type: "SET_VISBILITY_FILTER", filter: 'SHOW_COMPLETED' });
-console.log("Current state:");
-console.log(store.getState());
-console.log("--------------");
-*/
-
-
-
-
-
 
